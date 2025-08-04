@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B.S Diploma in Control Engineering - Design Assignment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a237e;
+            --secondary-color: #3949ab;
+            --accent-color: #5c6bc0;
+            --text-color: #333;
+            --light-bg: #f5f7fa;
+            --white: #ffffff;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header-content h2 {
+            font-size: 20px;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+        
+        .header-content p {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .header-content .contact {
+            font-style: italic;
+            font-size: 14px;
+        }
+        
+        .card {
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin: 30px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background-color: var(--accent-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7986cb;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #3d8b40;
+        }
+        
+        .animation-container {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .slot-machine {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .slot {
+            width: 80px;
+            height: 100px;
+            background-color: #f0f0f0;
+            border: 2px solid #333;
+            border-radius: 5px;
+            margin: 0 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .slot-inner {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            animation: spin 2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+        }
+        
+        .slot-value {
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        @keyframes spin {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-900px);
+            }
+        }
+        
+        .dataset-container {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .dataset-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .dataset-table th, .dataset-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .dataset-table th {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+        
+        .dataset-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .message {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .message.success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid var(--success-color);
+            color: var(--success-color);
+        }
+        
+        .message.error {
+            background-color: rgba(244, 67, 54, 0.1);
+            border-left: 4px solid var(--error-color);
+            color: var(--error-color);
+        }
+        
+        .admin-login {
+            text-align: right;
+            margin-top: 20px;
+        }
+        
+        .admin-view {
+            display: none;
+        }
+        
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .admin-table th, .admin-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .admin-table th {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+        
+        .admin-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .admin-controls {
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .status-bar {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .firebase-status {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>B.S Diploma in Control Engineering - Design Assignment</h1>
+                <h2>Compensator Design using Root Locus</h2>
+                <p>Course Coordinator: Prof. Ramkrishna Pasumarthy</p>
+                <p class="contact">In case of any Queries: vasumathi_r@study.iitm.ac.in</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="studentView" class="card">
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>System Active</span>
+                </div>
+                <div id="expiryTimer">Expires in: 9 days</div>
+            </div>
+            <div class="firebase-status" id="firebaseStatus">Connecting to database...</div>
+            
+            <h3>Enter your details to get your dataset</h3>
+            <p>Each roll number gets exactly one chance! Enter your roll number (in the format 2xfxxxxxxx) and institute email (rollno@es.study.iitm.ac.in) to get a randomly assigned unique dataset for the assignment Question 1.</p>
+            
+            <div id="message" class="message"></div>
+            
+            <form id="datasetForm">
+                <div class="form-group">
+                    <label for="rollNumber">Roll Number</label>
+                    <input type="text" id="rollNumber" placeholder="e.g., 23f3000341" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Institute Email</label>
+                    <input type="email" id="email" placeholder="e.g., rollno@es.study.iitm.ac.in" required>
+                </div>
+                
+                <button type="submit" id="submitBtn">Get My Dataset</button>
+            </form>
+            
+            <div class="spinner" id="spinner"></div>
+            
+            <div class="animation-container" id="animationContainer">
+                <h3>Assigning your unique dataset...</h3>
+                <div class="slot-machine">
+                    <div class="slot">
+                        <div class="slot-inner" id="slotA">
+                            <div class="slot-value">1.5</div>
+                            <div class="slot-value">3.3</div>
+                            <div class="slot-value">5.7</div>
+                            <div class="slot-value">3.2</div>
+                            <div class="slot-value">2.1</div>
+                            <div class="slot-value">1.6</div>
+                            <div class="slot-value">3.8</div>
+                            <div class="slot-value">2.3</div>
+                            <div class="slot-value">2.8</div>
+                            <div class="slot-value">1.9</div>
+                        </div>
+                    </div>
+                    <div class="slot">
+                        <div class="slot-inner" id="slotX">
+                            <div class="slot-value">1.1</div>
+                            <div class="slot-value">1.2</div>
+                            <div class="slot-value">0.7</div>
+                            <div class="slot-value">1.2</div>
+                            <div class="slot-value">1.5</div>
+                            <div class="slot-value">0.9</div>
+                            <div class="slot-value">1.2</div>
+                            <div class="slot-value">1.2</div>
+                            <div class="slot-value">0.7</div>
+                            <div class="slot-value">1.1</div>
+                        </div>
+                    </div>
+                    <div class="slot">
+                        <div class="slot-inner" id="slotY">
+                            <div class="slot-value">83</div>
+                            <div class="slot-value">79</div>
+                            <div class="slot-value">100</div>
+                            <div class="slot-value">80</div>
+                            <div class="slot-value">80</div>
+                            <div class="slot-value">105</div>
+                            <div class="slot-value">78</div>
+                            <div class="slot-value">81</div>
+                            <div class="slot-value">105</div>
+                            <div class="slot-value">79</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dataset-container" id="datasetContainer">
+                <h3>Your Assigned Dataset</h3>
+                <table class="dataset-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>a</td>
+                            <td id="paramA">-</td>
+                        </tr>
+                        <tr>
+                            <td>Steady State Error (X)</td>
+                            <td id="paramX">-</td>
+                        </tr>
+                        <tr>
+                            <td>Settling Time (Y)</td>
+                            <td id="paramY">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <button id="downloadBtn" class="btn-success">Download Dataset (CSV)</button>
+            </div>
+            
+            <div class="admin-login">
+                <button id="adminLoginBtn" class="btn-secondary">Admin Login</button>
+            </div>
+        </div>
+        
+        <div id="adminView" class="card admin-view">
+            <h3>Admin Login</h3>
+            <div id="adminMessage" class="message"></div>
+            
+            <div id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminUsername">Username</label>
+                    <input type="text" id="adminUsername" placeholder="Admin Username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" placeholder="Admin Password" required>
+                </div>
+                
+                <button id="adminSubmitBtn">Login</button>
+                <button id="backToStudentBtn">Back to Student View</button>
+            </div>
+            
+            <div id="adminPanel" style="display: none;">
+                <h3>Assignment History</h3>
+                <div class="admin-controls">
+                    <button id="refreshDataBtn">Refresh Data</button>
+                    <button id="downloadAllBtn" class="btn-success">Download All Data (CSV)</button>
+                    <button id="logoutBtn">Logout</button>
+                </div>
+                
+                <div class="spinner" id="adminSpinner"></div>
+                
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Roll Number</th>
+                            <th>Email</th>
+                            <th>Parameter a</th>
+                            <th>Steady State Error (X)</th>
+                            <th>Settling Time (Y)</th>
+                            <th>Assigned At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2023 B.S Diploma in Control Engineering. All rights reserved.</p>
+    </div>
+
+    <script>
+        // Sample dataset (in a real app, this would come from the server)
+        const datasets = [
+            {s_no: 1, a: 1.5, X: 1.1, Y: 83},
+            {s_no: 2, a: 3.3, X: 1.2, Y: 79},
+            {s_no: 3, a: 5.7, X: 0.7, Y: 100},
+            {s_no: 4, a: 3.2, X: 1.2, Y: 80},
+            {s_no: 5, a: 2.1, X: 1.5, Y: 80},
+            {s_no: 6, a: 1.6, X: 0.9, Y: 105},
+            {s_no: 7, a: 3.8, X: 1.2, Y: 78},
+            {s_no: 8, a: 2.3, X: 1.2, Y: 81},
+            {s_no: 9, a: 2.8, X: 0.7, Y: 105},
+            {s_no: 10, a: 1.9, X: 1.1, Y: 79},
+            {s_no: 11, a: 4, X: 1.4, Y: 79},
+            {s_no: 12, a: 1.4, X: 0.9, Y: 103},
+            {s_no: 13, a: 3.5, X: 1.2, Y: 82},
+            {s_no: 14, a: 2.6, X: 0.9, Y: 102},
+            {s_no: 15, a: 2.5, X: 1.5, Y: 84},
+            {s_no: 16, a: 4.4, X: 1.1, Y: 80},
+            {s_no: 17, a: 5, X: 0.8, Y: 109},
+            {s_no: 18, a: 2, X: 0.9, Y: 95},
+            {s_no: 19, a: 1.7, X: 0.8, Y: 97},
+            {s_no: 20, a: 4.3, X: 1, Y: 81},
+            {s_no: 21, a: 2.3, X: 1.5, Y: 76},
+            {s_no: 22, a: 3, X: 0.7, Y: 103},
+            {s_no: 23, a: 2.5, X: 1.1, Y: 77},
+            {s_no: 24, a: 2.1, X: 1.4, Y: 81},
+            {s_no: 25, a: 4.9, X: 1, Y: 84},
+            {s_no: 26, a: 5.3, X: 1, Y: 84},
+            {s_no: 27, a: 2.7, X: 1.2, Y: 80},
+            {s_no: 28, a: 4.1, X: 1, Y: 83},
+            {s_no: 29, a: 3, X: 0.6, Y: 103},
+            {s_no: 30, a: 3.6, X: 1, Y: 84},
+            {s_no: 31, a: 3.3, X: 0.6, Y: 97},
+            {s_no: 32, a: 2.6, X: 0.8, Y: 107},
+            {s_no: 33, a: 5.6, X: 1, Y: 80},
+            {s_no: 34, a: 4.6, X: 1, Y: 80},
+            {s_no: 35, a: 1.5, X: 1.2, Y: 78},
+            {s_no: 36, a: 3.2, X: 0.7, Y: 109},
+            {s_no: 37, a: 3.3, X: 1.2, Y: 80},
+            {s_no: 38, a: 5.2, X: 0.8, Y: 104},
+            {s_no: 39, a: 19, X: 1.3, Y: 78},
+            {s_no: 40, a: 2.1, X: 1.1, Y: 83},
+            {s_no: 41, a: 1.3, X: 1.1, Y: 80},
+            {s_no: 42, a: 4.9, X: 1.1, Y: 81},
+            {s_no: 43, a: 5.9, X: 1.3, Y: 75},
+            {s_no: 44, a: 4.2, X: 1, Y: 80},
+            {s_no: 45, a: 3, X: 0.7, Y: 93},
+            {s_no: 46, a: 5.1, X: 1.2, Y: 82},
+            {s_no: 47, a: 2.4, X: 1.2, Y: 78},
+            {s_no: 48, a: 2.1, X: 1.1, Y: 80},
+            {s_no: 49, a: 5.2, X: 1.5, Y: 82},
+            {s_no: 50, a: 2.5, X: 1.5, Y: 77},
+            {s_no: 51, a: 2.6, X: 1.1, Y: 96},
+            {s_no: 52, a: 5, X: 1, Y: 94},
+            {s_no: 53, a: 1.9, X: 1.2, Y: 94},
+            {s_no: 54, a: 1.9, X: 0.9, Y: 81},
+            {s_no: 55, a: 2.8, X: 1.2, Y: 84},
+            {s_no: 56, a: 3.7, X: 1.3, Y: 86},
+            {s_no: 57, a: 2.4, X: 1.1, Y: 82},
+            {s_no: 58, a: 3.5, X: 0.9, Y: 89},
+            {s_no: 59, a: 5, X: 0.6, Y: 87},
+            {s_no: 60, a: 3.7, X: 0.8, Y: 97},
+            {s_no: 61, a: 1.2, X: 1.5, Y: 92},
+            {s_no: 62, a: 4, X: 0.9, Y: 86},
+            {s_no: 63, a: 4.9, X: 0.9, Y: 91},
+            {s_no: 64, a: 4.8, X: 1.1, Y: 96},
+            {s_no: 65, a: 1.3, X: 1, Y: 78},
+            {s_no: 66, a: 3.8, X: 0.9, Y: 95},
+            {s_no: 67, a: 4.1, X: 1, Y: 99},
+            {s_no: 68, a: 3.3, X: 1.2, Y: 97},
+            {s_no: 69, a: 1.9, X: 1.3, Y: 83},
+            {s_no: 70, a: 2.6, X: 1.2, Y: 78},
+            {s_no: 71, a: 3.6, X: 1.2, Y: 85},
+            {s_no: 72, a: 2.3, X: 1.3, Y: 82},
+            {s_no: 73, a: 2.9, X: 1.5, Y: 81},
+            {s_no: 74, a: 2.5, X: 1.2, Y: 88},
+            {s_no: 75, a: 3.3, X: 0.8, Y: 88},
+            {s_no: 76, a: 1.2, X: 1.2, Y: 87},
+            {s_no: 77, a: 2.9, X: 1, Y: 92},
+            {s_no: 78, a: 4.5, X: 0.8, Y: 88},
+            {s_no: 79, a: 1.2, X: 0.7, Y: 91},
+            {s_no: 80, a: 3.4, X: 0.8, Y: 94}
+        ];
+        
+        // List of valid roll numbers
+        const validRollNumbers = [
+            '23f3000341', '23f3000789', '23f3000336', '23f3000318', '23f3000315',
+            '23f3000314', '23f3000741', '23f3000727', '23f3100008', '23f3000275',
+            '24f2100032', '23f3000264', '24f1100105', '23f3000686', '23f3000685',
+            '24f1100004', '23f3000680', '23f3000677', '23f3000252', '24f1100148',
+            '23f3000249', '23f3000244', '23f3000652', '23f3000225', '23f3000224',
+            '23f3000621', '23f3100015', '23f3000607', '23f3000209', '23f3000200',
+            '23f3000189', '23f3000577', '23f3000570', '23f3000569', '23f3000564',
+            '23f3000178', '23f3000528', '23f3000144', '23f3000134', '23f3000133',
+            '23f3000508', '23f3000130', '23f3000128', '23f3000496', '24f1100132',
+            '23f3000122', '23f3000486', '23f3000116', '23f3000469', '23f3000093',
+            '23f3000085', '23f3000449', '24f1100077', '23f3000442', '23f3000073',
+            '23f3000439', '23f3000436', '23f3000434', '23f3100017', '23f3000063',
+            '23f3000053', '23f3100029', '23f3000405', '23f3000041', '23f3000035',
+            '23f3000030', '23f3000024', '23f3000375', '23f3000019', '23f3000361',
+            '23f3000012', '23f3000345', '23f3000342'
+        ];
+        
+        // Test roll numbers
+        const testRollNumbers = ['ee21d063', 'ee25d401', 'da24m004'];
+        
+        // Version number to force reset when code is updated
+        const APP_VERSION = "1.2";
+        
+        // Initialize Firebase with your configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDnoNnfQw7iVTgl-YON4lBUy-E7sN_7mc",
+            authDomain: "dataset-assignment.firebaseapp.com",
+            databaseURL: "https://dataset-assignment-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "dataset-assignment",
+            storageBucket: "dataset-assignment.firebasestorage.app",
+            messagingSenderId: "59133897239",
+            appId: "1:59133897239:web:b454ecec1dc5d3740b4a52",
+            measurementId: "G-6PLRRN4RYG"
+        };
+        
+        // Initialize Firebase app
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Get a reference to the assignments and system data
+        const assignmentsRef = database.ref('assignments');
+        const systemRef = database.ref('system');
+        
+        // In-memory storage for assignments
+        let assignments = {};
+        let assignedDatasets = new Set();
+        let systemData = {};
+        let isAdminLoggedIn = false;
+        
+        // DOM elements
+        const datasetForm = document.getElementById('datasetForm');
+        const rollNumberInput = document.getElementById('rollNumber');
+        const emailInput = document.getElementById('email');
+        const submitBtn = document.getElementById('submitBtn');
+        const spinner = document.getElementById('spinner');
+        const animationContainer = document.getElementById('animationContainer');
+        const datasetContainer = document.getElementById('datasetContainer');
+        const paramA = document.getElementById('paramA');
+        const paramX = document.getElementById('paramX');
+        const paramY = document.getElementById('paramY');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const message = document.getElementById('message');
+        const firebaseStatus = document.getElementById('firebaseStatus');
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const adminView = document.getElementById('adminView');
+        const studentView = document.getElementById('studentView');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const adminPanel = document.getElementById('adminPanel');
+        const adminSubmitBtn = document.getElementById('adminSubmitBtn');
+        const backToStudentBtn = document.getElementById('backToStudentBtn');
+        const adminMessage = document.getElementById('adminMessage');
+        const adminTableBody = document.getElementById('adminTableBody');
+        const refreshDataBtn = document.getElementById('refreshDataBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminSpinner = document.getElementById('adminSpinner');
+        
+        // Initialize data from Firebase
+        function initializeData() {
+            firebaseStatus.textContent = "Connecting to database...";
+            
+            // Check if system is still valid (within 9 days)
+            systemRef.once('value', (snapshot) => {
+                const systemDataFromDB = snapshot.val();
+                let now = new Date();
+                
+                if (!systemDataFromDB || 
+                    systemDataFromDB.version !== APP_VERSION || 
+                    !systemDataFromDB.expiryDate || 
+                    new Date(systemDataFromDB.expiryDate) <= now) {
+                    
+                    // Set new system data
+                    const expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 9);
+                    
+                    systemData = {
+                        version: APP_VERSION,
+                        expiryDate: expiryDate.toISOString(),
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    // Save to Firebase
+                    systemRef.set(systemData)
+                        .then(() => {
+                            firebaseStatus.textContent = "Connected to database (System initialized)";
+                            console.log("System data initialized");
+                        })
+                        .catch((error) => {
+                            firebaseStatus.textContent = "Error connecting to database";
+                            console.error("Error initializing system data: ", error);
+                        });
+                    
+                    // Clear assignments if system expired or version changed
+                    assignmentsRef.set({})
+                        .then(() => {
+                            console.log("Assignments cleared");
+                            assignments = {};
+                            assignedDatasets = new Set();
+                        })
+                        .catch((error) => {
+                            console.error("Error clearing assignments: ", error);
+                        });
+                } else {
+                    // Use existing system data
+                    systemData = systemDataFromDB;
+                    firebaseStatus.textContent = "Connected to database";
+                    console.log("Using existing system data");
+                }
+                
+                // Update expiry timer
+                updateExpiryTimer(new Date(systemData.expiryDate));
+                
+                // Start the expiry timer update interval
+                setInterval(() => updateExpiryTimer(new Date(systemData.expiryDate)), 60000); // Update every minute
+            });
+            
+            // Listen for assignments changes
+            assignmentsRef.on('value', (snapshot) => {
+                const assignmentsFromDB = snapshot.val() || {};
+                assignments = assignmentsFromDB;
+                
+                // Rebuild assignedDatasets set
+                assignedDatasets = new Set();
+                for (const rollNumber in assignments) {
+                    if (assignments[rollNumber].dataset && assignments[rollNumber].dataset.s_no) {
+                        assignedDatasets.add(assignments[rollNumber].dataset.s_no);
+                    }
+                }
+                
+                console.log("Assignments loaded:", assignments);
+                console.log("Assigned datasets:", Array.from(assignedDatasets));
+            });
+        }
+        
+        // Update the expiry timer display
+        function updateExpiryTimer(expiryDate) {
+            const now = new Date();
+            const diff = expiryDate - now;
+            
+            if (diff <= 0) {
+                document.getElementById('expiryTimer').textContent = 'System Expired';
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            document.getElementById('expiryTimer').textContent = 
+                `Expires in: ${days}d ${hours}h ${minutes}m`;
+        }
+        
+        // Save assignment to Firebase
+        function saveAssignment(rollNumber, assignment) {
+            assignmentsRef.child(rollNumber).set(assignment)
+                .then(() => {
+                    console.log("Assignment saved for", rollNumber);
+                })
+                .catch((error) => {
+                    console.error("Error saving assignment: ", error);
+                    showMessage('Error saving assignment. Please try again.', 'error');
+                });
+        }
+        
+        // Initialize data when page loads
+        initializeData();
+        
+        // Form submission
+        datasetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Check if system is expired
+            if (systemData.expiryDate && new Date(systemData.expiryDate) <= new Date()) {
+                showMessage('System has expired. Please contact administrator.', 'error');
+                return;
+            }
+            
+            const rollNumber = rollNumberInput.value.trim().toLowerCase();
+            const email = emailInput.value.trim();
+            
+            // Validate roll number
+            const isValidRoll = validRollNumbers.some(rn => rn.toLowerCase() === rollNumber) ||
+                               testRollNumbers.some(rn => rn.toLowerCase() === rollNumber);
+            
+            if (!isValidRoll) {
+                showMessage('Invalid roll number. Please check and try again.', 'error');
+                return;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showMessage('Invalid email format. Please enter a valid email.', 'error');
+                return;
+            }
+            
+            // Show spinner
+            spinner.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            // Check if student already has an assignment
+            if (assignments[rollNumber]) {
+                // Show existing assignment
+                spinner.style.display = 'none';
+                showDataset(assignments[rollNumber]);
+                showMessage('You have already been assigned a dataset. Here it is again.', 'success');
+                submitBtn.disabled = false;
+            } else {
+                // Assign new dataset
+                setTimeout(() => {
+                    spinner.style.display = 'none';
+                    assignNewDataset(rollNumber, email);
+                    submitBtn.disabled = false;
+                }, 1000);
+            }
+        });
+        
+        // Assign a new dataset to a student
+        function assignNewDataset(rollNumber, email) {
+            // Find an unassigned dataset
+            let availableDatasets = datasets.filter(ds => !assignedDatasets.has(ds.s_no));
+            
+            if (availableDatasets.length === 0) {
+                showMessage('No more datasets available. Please contact the administrator.', 'error');
+                return;
+            }
+            
+            // Select a random dataset
+            const randomIndex = Math.floor(Math.random() * availableDatasets.length);
+            const selectedDataset = availableDatasets[randomIndex];
+            
+            // Store the assignment
+            const assignment = {
+                rollNumber: rollNumber,
+                email: email,
+                dataset: selectedDataset,
+                assignedAt: new Date().toISOString()
+            };
+            
+            // Save to Firebase
+            saveAssignment(rollNumber, assignment);
+            
+            // Show animation
+            showAnimation();
+            
+            // After animation, show the dataset
+            setTimeout(() => {
+                showDataset(assignment);
+                showMessage('Dataset assigned successfully!', 'success');
+            }, 3000);
+        }
+        
+        // Show the slot machine animation
+        function showAnimation() {
+            animationContainer.style.display = 'block';
+            datasetContainer.style.display = 'none';
+            
+            // Reset animation
+            const slotA = document.getElementById('slotA');
+            const slotX = document.getElementById('slotX');
+            const slotY = document.getElementById('slotY');
+            
+            slotA.style.animation = 'none';
+            slotX.style.animation = 'none';
+            slotY.style.animation = 'none';
+            
+            // Trigger reflow
+            void slotA.offsetWidth;
+            void slotX.offsetWidth;
+            void slotY.offsetWidth;
+            
+            // Start animation
+            slotA.style.animation = 'spin 2s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
+            slotX.style.animation = 'spin 2.5s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
+            slotY.style.animation = 'spin 3s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
+        }
+        
+        // Show the assigned dataset
+        function showDataset(assignment) {
+            animationContainer.style.display = 'none';
+            datasetContainer.style.display = 'block';
+            
+            paramA.textContent = assignment.dataset.a;
+            paramX.textContent = assignment.dataset.X;
+            paramY.textContent = assignment.dataset.Y;
+            
+            // Store current assignment for download
+            downloadBtn.dataset.rollNumber = assignment.rollNumber;
+        }
+        
+        // Download dataset as CSV
+        downloadBtn.addEventListener('click', () => {
+            const rollNumber = downloadBtn.dataset.rollNumber;
+            const assignment = assignments[rollNumber];
+            
+            if (!assignment) {
+                showMessage('No dataset available for download.', 'error');
+                return;
+            }
+            
+            // Create CSV content
+            const csvContent = `S.No,a,X,Y\n${assignment.dataset.s_no},${assignment.dataset.a},${assignment.dataset.X},${assignment.dataset.Y}`;
+            
+            // Create a data URL
+            const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', `dataset_${rollNumber}.csv`);
+            link.style.visibility = 'hidden';
+            
+            // Add to DOM, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('Dataset downloaded successfully!', 'success');
+        });
+        
+        // Admin login
+        adminLoginBtn.addEventListener('click', () => {
+            studentView.style.display = 'none';
+            adminView.style.display = 'block';
+        });
+        
+        backToStudentBtn.addEventListener('click', () => {
+            adminView.style.display = 'none';
+            studentView.style.display = 'block';
+        });
+        
+        adminSubmitBtn.addEventListener('click', () => {
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            // Simple authentication (in a real app, this would be server-side)
+            if (username === 'admin' && password === 'Vajukanna') {
+                isAdminLoggedIn = true;
+                adminLoginForm.style.display = 'none';
+                adminPanel.style.display = 'block';
+                loadAdminData();
+                showAdminMessage('Login successful!', 'success');
+            } else {
+                showAdminMessage('Invalid username or password.', 'error');
+            }
+        });
+        
+        logoutBtn.addEventListener('click', () => {
+            isAdminLoggedIn = false;
+            adminLoginForm.style.display = 'block';
+            adminPanel.style.display = 'none';
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
+            adminView.style.display = 'none';
+            studentView.style.display = 'block';
+        });
+        
+        // Load admin data
+        function loadAdminData() {
+            adminSpinner.style.display = 'block';
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                adminSpinner.style.display = 'none';
+                
+                // Clear table
+                adminTableBody.innerHTML = '';
+                
+                // Populate table with assignments
+                let index = 1;
+                for (const rollNumber in assignments) {
+                    const assignment = assignments[rollNumber];
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${index}</td>
+                        <td>${assignment.rollNumber}</td>
+                        <td>${assignment.email}</td>
+                        <td>${assignment.dataset.a}</td>
+                        <td>${assignment.dataset.X}</td>
+                        <td>${assignment.dataset.Y}</td>
+                        <td>${new Date(assignment.assignedAt).toLocaleString()}</td>
+                    `;
+                    
+                    adminTableBody.appendChild(row);
+                    index++;
+                }
+                
+                if (index === 1) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="7" style="text-align: center;">No assignments found</td>`;
+                    adminTableBody.appendChild(row);
+                }
+            }, 500);
+        }
+        
+        // Refresh admin data
+        refreshDataBtn.addEventListener('click', loadAdminData);
+        
+        // Download all data as CSV
+        downloadAllBtn.addEventListener('click', () => {
+            // Create CSV content
+            let csvContent = 'S.No,Roll Number,Email,a,X,Y,Assigned At\n';
+            
+            let index = 1;
+            for (const rollNumber in assignments) {
+                const assignment = assignments[rollNumber];
+                csvContent += `${index},${assignment.rollNumber},${assignment.email},${assignment.dataset.a},${assignment.dataset.X},${assignment.dataset.Y},"${new Date(assignment.assignedAt).toLocaleString()}"\n`;
+                index++;
+            }
+            
+            // Create a data URL
+            const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', 'all_assignments.csv');
+            link.style.visibility = 'hidden';
+            
+            // Add to DOM, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showAdminMessage('All data downloaded successfully!', 'success');
+        });
+        
+        // Utility functions
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.style.display = 'block';
+            
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showAdminMessage(text, type) {
+            adminMessage.textContent = text;
+            adminMessage.className = `message ${type}`;
+            adminMessage.style.display = 'block';
+            
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                adminMessage.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
