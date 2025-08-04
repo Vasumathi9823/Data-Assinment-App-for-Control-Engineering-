@@ -335,6 +335,8 @@
             background-color: #f8f9fa;
             border-radius: 4px;
             display: none;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -625,7 +627,7 @@
         const testRollNumbers = ['ee21d063', 'ee25d401', 'da24m004'];
         
         // Version number to force reset when code is updated
-        const APP_VERSION = "1.3";
+        const APP_VERSION = "1.4";
         
         // Initialize Firebase with your configuration
         const firebaseConfig = {
@@ -654,6 +656,7 @@
         let isAdminLoggedIn = false;
         let firebaseConnected = false;
         let currentAssignment = null;
+        let initialDataLoaded = false;
         
         // DOM elements
         const datasetForm = document.getElementById('datasetForm');
@@ -693,13 +696,14 @@
         }
         
         // Initialize data from Firebase
-        function initializeData() {
+        async function initializeData() {
             firebaseStatus.textContent = "Connecting to database...";
             debugLog("Starting initialization");
             
             // Check if system is still valid (within 9 days)
-            systemRef.once('value', (snapshot) => {
-                const systemDataFromDB = snapshot.val();
+            try {
+                const systemSnapshot = await systemRef.once('value');
+                const systemDataFromDB = systemSnapshot.val();
                 let now = new Date();
                 
                 debugLog(`System data from DB: ${JSON.stringify(systemDataFromDB)}`);
@@ -722,27 +726,16 @@
                     };
                     
                     // Save to Firebase
-                    systemRef.set(systemData)
-                        .then(() => {
-                            firebaseStatus.textContent = "Connected to database (System initialized)";
-                            firebaseConnected = true;
-                            debugLog("System data initialized successfully");
-                        })
-                        .catch((error) => {
-                            firebaseStatus.textContent = "Error connecting to database";
-                            debugLog(`Error initializing system data: ${error.message}`);
-                        });
+                    await systemRef.set(systemData);
+                    firebaseStatus.textContent = "Connected to database (System initialized)";
+                    firebaseConnected = true;
+                    debugLog("System data initialized successfully");
                     
                     // Clear assignments if system expired or version changed
-                    assignmentsRef.set({})
-                        .then(() => {
-                            debugLog("Assignments cleared");
-                            assignments = {};
-                            assignedDatasets = new Set();
-                        })
-                        .catch((error) => {
-                            debugLog(`Error clearing assignments: ${error.message}`);
-                        });
+                    await assignmentsRef.set({});
+                    debugLog("Assignments cleared");
+                    assignments = {};
+                    assignedDatasets = new Set();
                 } else {
                     // Use existing system data
                     systemData = systemDataFromDB;
@@ -756,11 +749,10 @@
                 
                 // Start the expiry timer update interval
                 setInterval(() => updateExpiryTimer(new Date(systemData.expiryDate)), 60000); // Update every minute
-            });
-            
-            // Listen for assignments changes
-            assignmentsRef.on('value', (snapshot) => {
-                const assignmentsFromDB = snapshot.val() || {};
+                
+                // Load assignments
+                const assignmentsSnapshot = await assignmentsRef.once('value');
+                const assignmentsFromDB = assignmentsSnapshot.val() || {};
                 assignments = assignmentsFromDB;
                 
                 // Rebuild assignedDatasets set
@@ -774,12 +766,35 @@
                 debugLog(`Assignments loaded: ${Object.keys(assignments).length} assignments`);
                 debugLog(`Assigned datasets: ${Array.from(assignedDatasets).join(', ')}`);
                 
-                // If we have a current assignment, update it
-                if (currentAssignment && assignments[currentAssignment.rollNumber]) {
-                    currentAssignment = assignments[currentAssignment.rollNumber];
-                    debugLog(`Updated current assignment for ${currentAssignment.rollNumber}`);
-                }
-            });
+                // Set up real-time listener for assignments
+                assignmentsRef.on('value', (snapshot) => {
+                    const assignmentsFromDB = snapshot.val() || {};
+                    assignments = assignmentsFromDB;
+                    
+                    // Rebuild assignedDatasets set
+                    assignedDatasets = new Set();
+                    for (const rollNumber in assignments) {
+                        if (assignments[rollNumber].dataset && assignments[rollNumber].dataset.s_no) {
+                            assignedDatasets.add(assignments[rollNumber].dataset.s_no);
+                        }
+                    }
+                    
+                    debugLog(`Assignments updated: ${Object.keys(assignments).length} assignments`);
+                    debugLog(`Assigned datasets updated: ${Array.from(assignedDatasets).join(', ')}`);
+                    
+                    // If we have a current assignment, update it
+                    if (currentAssignment && assignments[currentAssignment.rollNumber]) {
+                        currentAssignment = assignments[currentAssignment.rollNumber];
+                        debugLog(`Updated current assignment for ${currentAssignment.rollNumber}`);
+                    }
+                });
+                
+                initialDataLoaded = true;
+                debugLog("Initial data loading complete");
+            } catch (error) {
+                firebaseStatus.textContent = "Error connecting to database";
+                debugLog(`Error during initialization: ${error.message}`);
+            }
         }
         
         // Update the expiry timer display
@@ -815,6 +830,21 @@
             }
         }
         
+        // Check if an assignment exists for a roll number
+        async function checkAssignmentExists(rollNumber) {
+            debugLog(`Checking if assignment exists for ${rollNumber}`);
+            
+            try {
+                const snapshot = await assignmentsRef.child(rollNumber).once('value');
+                const assignment = snapshot.val();
+                debugLog(`Assignment exists for ${rollNumber}: ${assignment ? 'Yes' : 'No'}`);
+                return assignment;
+            } catch (error) {
+                debugLog(`Error checking assignment: ${error.message}`);
+                return null;
+            }
+        }
+        
         // Initialize data when page loads
         initializeData();
         
@@ -823,6 +853,12 @@
             e.preventDefault();
             
             debugLog("Form submitted");
+            
+            // Check if initial data has been loaded
+            if (!initialDataLoaded) {
+                showMessage('System is still initializing. Please wait a moment and try again.', 'error');
+                return;
+            }
             
             // Check if system is expired
             if (systemData.expiryDate && new Date(systemData.expiryDate) <= new Date()) {
@@ -861,23 +897,23 @@
             spinner.style.display = 'block';
             submitBtn.disabled = true;
             
-            // Check if student already has an assignment
-            if (assignments[rollNumber]) {
+            // Check if student already has an assignment (direct Firebase check)
+            const existingAssignment = await checkAssignmentExists(rollNumber);
+            
+            spinner.style.display = 'none';
+            
+            if (existingAssignment) {
                 debugLog(`Existing assignment found for ${rollNumber}`);
-                spinner.style.display = 'none';
-                currentAssignment = assignments[rollNumber];
+                currentAssignment = existingAssignment;
                 showDataset(currentAssignment);
                 showMessage('You have already been assigned a dataset. Here it is again.', 'success');
-                submitBtn.disabled = false;
             } else {
                 // Assign new dataset
                 debugLog(`No existing assignment found for ${rollNumber}, assigning new dataset`);
-                setTimeout(async () => {
-                    spinner.style.display = 'none';
-                    await assignNewDataset(rollNumber, email);
-                    submitBtn.disabled = false;
-                }, 1000);
+                await assignNewDataset(rollNumber, email);
             }
+            
+            submitBtn.disabled = false;
         });
         
         // Assign a new dataset to a student
@@ -965,18 +1001,20 @@
         }
         
         // Download dataset as CSV
-        downloadBtn.addEventListener('click', () => {
+        downloadBtn.addEventListener('click', async () => {
             const rollNumber = downloadBtn.dataset.rollNumber;
             debugLog(`Download requested for ${rollNumber}`);
             
             // Check if we have a current assignment
             if (!currentAssignment || currentAssignment.rollNumber !== rollNumber) {
-                debugLog(`No current assignment found for ${rollNumber}, checking assignments object`);
+                debugLog(`No current assignment found for ${rollNumber}, checking Firebase`);
                 
-                // Check the assignments object
-                if (assignments[rollNumber]) {
-                    currentAssignment = assignments[rollNumber];
-                    debugLog(`Found assignment in assignments object for ${rollNumber}`);
+                // Check Firebase for the assignment
+                const assignment = await checkAssignmentExists(rollNumber);
+                
+                if (assignment) {
+                    currentAssignment = assignment;
+                    debugLog(`Found assignment in Firebase for ${rollNumber}`);
                 } else {
                     debugLog(`No assignment found for ${rollNumber}`);
                     showMessage('No dataset available for download. Please try again.', 'error');
@@ -1043,12 +1081,15 @@
         });
         
         // Load admin data
-        function loadAdminData() {
+        async function loadAdminData() {
             debugLog("Loading admin data");
             adminSpinner.style.display = 'block';
             
-            // Simulate API call delay
-            setTimeout(() => {
+            try {
+                // Get the latest assignments from Firebase
+                const snapshot = await assignmentsRef.once('value');
+                const assignments = snapshot.val() || {};
+                
                 adminSpinner.style.display = 'none';
                 
                 // Clear table
@@ -1081,42 +1122,55 @@
                 }
                 
                 debugLog(`Admin data loaded: ${index - 1} assignments`);
-            }, 500);
+            } catch (error) {
+                adminSpinner.style.display = 'none';
+                debugLog(`Error loading admin data: ${error.message}`);
+                showAdminMessage('Error loading data. Please try again.', 'error');
+            }
         }
         
         // Refresh admin data
         refreshDataBtn.addEventListener('click', loadAdminData);
         
         // Download all data as CSV
-        downloadAllBtn.addEventListener('click', () => {
+        downloadAllBtn.addEventListener('click', async () => {
             debugLog("Downloading all data");
             
-            // Create CSV content
-            let csvContent = 'S.No,Roll Number,Email,a,X,Y,Assigned At\n';
-            
-            let index = 1;
-            for (const rollNumber in assignments) {
-                const assignment = assignments[rollNumber];
-                csvContent += `${index},${assignment.rollNumber},${assignment.email},${assignment.dataset.a},${assignment.dataset.X},${assignment.dataset.Y},"${new Date(assignment.assignedAt).toLocaleString()}"\n`;
-                index++;
+            try {
+                // Get the latest assignments from Firebase
+                const snapshot = await assignmentsRef.once('value');
+                const assignments = snapshot.val() || {};
+                
+                // Create CSV content
+                let csvContent = 'S.No,Roll Number,Email,a,X,Y,Assigned At\n';
+                
+                let index = 1;
+                for (const rollNumber in assignments) {
+                    const assignment = assignments[rollNumber];
+                    csvContent += `${index},${assignment.rollNumber},${assignment.email},${assignment.dataset.a},${assignment.dataset.X},${assignment.dataset.Y},"${new Date(assignment.assignedAt).toLocaleString()}"\n`;
+                    index++;
+                }
+                
+                // Create a data URL
+                const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+                
+                // Create a temporary link element
+                const link = document.createElement('a');
+                link.setAttribute('href', dataUri);
+                link.setAttribute('download', 'all_assignments.csv');
+                link.style.visibility = 'hidden';
+                
+                // Add to DOM, click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                debugLog("All data downloaded");
+                showAdminMessage('All data downloaded successfully!', 'success');
+            } catch (error) {
+                debugLog(`Error downloading all data: ${error.message}`);
+                showAdminMessage('Error downloading data. Please try again.', 'error');
             }
-            
-            // Create a data URL
-            const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-            
-            // Create a temporary link element
-            const link = document.createElement('a');
-            link.setAttribute('href', dataUri);
-            link.setAttribute('download', 'all_assignments.csv');
-            link.style.visibility = 'hidden';
-            
-            // Add to DOM, click, and remove
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            debugLog("All data downloaded");
-            showAdminMessage('All data downloaded successfully!', 'success');
         });
         
         // Utility functions
